@@ -24,6 +24,7 @@ class Contact(Base):
     
     # Связь с диалогами
     dialogs = relationship("ContactDialog", back_populates="contact", cascade="all, delete-orphan")
+    scheduled_calls = relationship("ScheduledCall", back_populates="contact", cascade="all, delete-orphan")
 
     def get_tags(self):
         """Получение тегов как список"""

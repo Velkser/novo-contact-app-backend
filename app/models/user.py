@@ -21,6 +21,7 @@ class User(Base):
     # Связи
     contacts = relationship("Contact", back_populates="user", cascade="all, delete-orphan")
     prompt_templates = relationship("PromptTemplate", back_populates="user", cascade="all, delete-orphan")
+    scheduled_calls = relationship("ScheduledCall", back_populates="user", cascade="all, delete-orphan")
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"

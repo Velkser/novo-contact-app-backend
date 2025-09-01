@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.endpoints import auth, contacts, prompt_templates
+from app.api.v1.endpoints import auth, contacts, prompt_templates, scheduled_calls
+
 from app.database import engine, Base
 
 # Создание таблиц
@@ -26,6 +27,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(contacts.router, prefix="/api", tags=["contacts"])
 app.include_router(prompt_templates.router, prefix="/api", tags=["prompt_templates"])
+app.include_router(scheduled_calls.router, prefix="/api", tags=["scheduled_calls"])
 
 @app.get("/")
 async def root():
