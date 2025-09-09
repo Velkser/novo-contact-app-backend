@@ -1,3 +1,4 @@
+# app/core/config.py
 import os
 from dotenv import load_dotenv
 
@@ -15,5 +16,12 @@ class Settings:
     
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+    
+    # Twilio
+    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
+    TWILIO_PHONE_NUMBER: str = os.getenv("TWILIO_PHONE_NUMBER", "")
 
+    # Base URL для webhook'ов
+    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
 settings = Settings()
