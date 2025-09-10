@@ -1,5 +1,5 @@
 # app/schemas/scheduled_call.py
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -16,27 +16,28 @@ class ScheduledCallBase(BaseModel):
 
 class ScheduledCallCreate(ScheduledCallBase):
     # Валидация: должен быть указан либо scheduled_time, либо оба временных окна
-    @field_validator('scheduled_time', 'start_time_window', 'end_time_window')
+    @model_validator(mode="after")
     @classmethod
-    def validate_timing(cls, v, info):
-        # Получаем все значения полей
-        values = info.data
-        
-        scheduled_time = values.get('scheduled_time')
-        start_time_window = values.get('start_time_window')
-        end_time_window = values.get('end_time_window')
-        
-        # Проверяем, что указано либо конкретное время, либо оба временных окна
+    def validate_timing(cls, values):
+        scheduled_time = values.scheduled_time
+        start_time_window = values.start_time_window
+        end_time_window = values.end_time_window
+
+        # Проверяем, что указано либо scheduled_time, либо оба временных окна
         if not scheduled_time and not (start_time_window and end_time_window):
-            raise ValueError('Must specify either scheduled_time or both start_time_window and end_time_window')
-        
+            raise ValueError(
+                "Must specify either scheduled_time or both start_time_window and end_time_window"
+            )
+
         if scheduled_time and (start_time_window or end_time_window):
-            raise ValueError('Cannot specify both scheduled_time and time windows')
-        
+            raise ValueError(
+                "Cannot specify both scheduled_time and time windows"
+            )
+
         if start_time_window and end_time_window and start_time_window >= end_time_window:
-            raise ValueError('start_time_window must be before end_time_window')
-        
-        return v
+            raise ValueError("start_time_window must be before end_time_window")
+
+        return values
 
 class ScheduledCallUpdate(BaseModel):
     # Делаем все поля необязательными для обновления
