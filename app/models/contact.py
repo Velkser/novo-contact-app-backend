@@ -1,5 +1,5 @@
-# app/models/contact.py
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
+# app/models/contact.py (обновленный с группами)
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -15,17 +15,16 @@ class Contact(Base):
     email = Column(String, nullable=True)
     company = Column(String, nullable=True)
     script = Column(Text, nullable=True)
-    tags = Column(Text, nullable=True)  # JSON строка с тегами
+    tags = Column(JSON, nullable=True)  # JSON строка с тегами
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
-    # Связь с пользователем
+    # Связи
     user = relationship("User", back_populates="contacts")
-    
-    # Связь с диалогами
     dialogs = relationship("ContactDialog", back_populates="contact", cascade="all, delete-orphan")
     scheduled_calls = relationship("ScheduledCall", back_populates="contact", cascade="all, delete-orphan")
+    group_memberships = relationship("GroupMember", back_populates="contact", cascade="all, delete-orphan")  # ← Добавлено
 
     def get_tags(self):
         """Получение тегов как список"""
@@ -51,10 +50,8 @@ class ContactDialog(Base):
     date = Column(DateTime, default=func.now())
     transcript = Column(Text, nullable=True)  # Полный текст диалога
     
-    # Связь с контактом
+    # Связи
     contact = relationship("Contact", back_populates="dialogs")
-    
-    # Связь с сообщениями
     messages = relationship("DialogMessage", back_populates="dialog", cascade="all, delete-orphan")
 
 class DialogMessage(Base):
@@ -66,5 +63,5 @@ class DialogMessage(Base):
     text = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=func.now())
     
-    # Связь с диалогом
+    # Связи
     dialog = relationship("ContactDialog", back_populates="messages")

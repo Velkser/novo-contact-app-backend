@@ -1,3 +1,4 @@
+# app/models/user.py (обновленный с группами)
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -22,6 +23,8 @@ class User(Base):
     contacts = relationship("Contact", back_populates="user", cascade="all, delete-orphan")
     prompt_templates = relationship("PromptTemplate", back_populates="user", cascade="all, delete-orphan")
     scheduled_calls = relationship("ScheduledCall", back_populates="user", cascade="all, delete-orphan")
+    groups = relationship("Group", back_populates="user", cascade="all, delete-orphan")  # ← Добавлено
+    scheduled_group_calls = relationship("ScheduledGroupCall", back_populates="user", cascade="all, delete-orphan")  # ← Добавлено
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
