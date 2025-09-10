@@ -3,6 +3,7 @@ from typing import List, Optional
 from app.models.contact import Contact, ContactDialog, DialogMessage
 from app.schemas.contact import ContactCreate, ContactUpdate
 import json
+from datetime import datetime
 
 def get_contact(db: Session, contact_id: int, user_id: int) -> Optional[Contact]:
     return db.query(Contact).filter(
@@ -35,12 +36,7 @@ def create_contact(db: Session, contact: ContactCreate, user_id: int) -> Contact
     db.refresh(db_contact)
     return db_contact
 
-def update_contact(
-    db: Session, 
-    contact_id: int, 
-    contact_update: ContactUpdate, 
-    user_id: int
-) -> Optional[Contact]:
+def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, user_id: int) -> Optional[Contact]:
     db_contact = get_contact(db, contact_id, user_id)
     if db_contact:
         update_data = contact_update.dict(exclude_unset=True)
@@ -66,39 +62,73 @@ def delete_contact(db: Session, contact_id: int, user_id: int) -> bool:
     return False
 
 # Диалоги
-def add_dialog(db: Session, contact_id: int, user_id: int, messages: List[dict], transcript: str = None) -> ContactDialog:
+def add_dialog(db: Session, contact_id: int, user_id: int, messages: List[dict], transcript: str = None) -> Optional[ContactDialog]:
+    """Добавляет новый диалог к контакту"""
     # Проверяем, что контакт принадлежит пользователю
     contact = get_contact(db, contact_id, user_id)
     if not contact:
         return None
     
-    # Создаем диалог
-    dialog = ContactDialog(
-        contact_id=contact_id,
-        transcript=transcript
-    )
-    db.add(dialog)
-    db.commit()
-    db.refresh(dialog)
-    
-    # Добавляем сообщения
-    for msg_data in messages:
-        message = DialogMessage(
-            dialog_id=dialog.id,
-            role=msg_data['role'],
-            text=msg_data['text']
+    try:
+        # Создаем новый диалог
+        dialog = ContactDialog(
+            contact_id=contact_id,
+            date=datetime.utcnow(),
+            transcript=transcript
         )
-        db.add(message)
-    
-    db.commit()
-    db.refresh(dialog)
-    return dialog
+        db.add(dialog)
+        db.commit()
+        db.refresh(dialog)
+        
+        # Добавляем сообщения
+        for msg_data in messages:
+            message = DialogMessage(
+                dialog_id=dialog.id,
+                role=msg_data['role'],
+                text=msg_data['text']
+            )
+            db.add(message)
+        
+        db.commit()
+        db.refresh(dialog)
+        
+        return dialog
+    except Exception as e:
+        db.rollback()
+        print(f"Error adding dialog: {e}")
+        return None
 
 def get_contact_dialogs(db: Session, contact_id: int, user_id: int) -> List[ContactDialog]:
+    """Получает все диалоги контакта"""
     contact = get_contact(db, contact_id, user_id)
     if not contact:
         return []
     
-    return db.query(ContactDialog).filter(
+    dialogs = db.query(ContactDialog).filter(
         ContactDialog.contact_id == contact_id
-    ).all() 
+    ).order_by(ContactDialog.date.desc()).all()
+    
+    # Загружаем сообщения для каждого диалога
+    for dialog in dialogs:
+        dialog.messages = db.query(DialogMessage).filter(
+            DialogMessage.dialog_id == dialog.id
+        ).order_by(DialogMessage.timestamp.asc()).all()
+    
+    return dialogs
+
+def add_dialog_message(db: Session, dialog_id: int, role: str, text: str) -> Optional[DialogMessage]:
+    """Добавляет сообщение к диалогу"""
+    try:
+        message = DialogMessage(
+            dialog_id=dialog_id,
+            role=role,
+            text=text
+        )
+        db.add(message)
+        db.commit()
+        db.refresh(message)
+        return message
+    except Exception as e:
+        db.rollback()
+        print(f"Error adding dialog message: {e}")
+        return None
