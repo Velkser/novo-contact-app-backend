@@ -144,6 +144,59 @@ class TwilioService:
         except Exception as e:
             logger.error(f"❌ Error getting call status for {call_sid}: {e}")
             return None
+        
+    def make_call_with_url(self, to_number: str, url: str, contact_id: int) -> Optional[str]:
+        """
+        Совершает звонок через Twilio, используя внешний webhook (например, для диалогов)
+        
+        Args:
+            to_number: Номер телефона получателя
+            url: Webhook URL, который будет отдавать TwiML
+            contact_id: ID контакта
+            
+        Returns:
+            SID звонка или None в случае ошибки
+        """
+        logger.info(f"📞 Making DIALOG call to {to_number} for contact {contact_id} (webhook={url})")
+        
+        if not self.client:
+            logger.warning("⚠️ Twilio not configured. Cannot make dialog call.")
+            return None
+        
+        try:
+            call = self.client.calls.create(
+                to=to_number,
+                from_=self.from_number,
+                url=url   # вместо twiml указываем URL вебхука
+            )
+            
+            logger.info(f"✅ Dialog call initiated successfully. SID: {call.sid}")
+            return call.sid
+            
+        except Exception as e:
+            logger.error(f"❌ Error making DIALOG call to {to_number}: {e}")
+            return None
+        
+
+    def make_call_with_media_streams(self, to_number: str, webhook_url: str, contact_id: int) -> Optional[str]:
+        """
+        Создает звонок с Media Streams, чтобы голос абонента шёл на сервер в реальном времени.
+        """
+        if not self.client:
+            return None
+
+        try:
+            call = self.client.calls.create(
+                to=to_number,
+                from_=self.from_number,
+                twiml=f'<Response><Start><Stream url="{webhook_url}"/></Start></Response>'
+            )
+            return call.sid
+        except Exception as e:
+            logging.error(f"❌ Error making DIALOG call to {to_number}: {e}")
+            return None
+
+
 
 # Глобальный экземпляр сервиса
 twilio_service = TwilioService()

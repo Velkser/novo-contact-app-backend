@@ -5,6 +5,7 @@ from typing import Optional
 class TwilioCallBase(BaseModel):
     contact_id: int
     script: Optional[str] = None
+    base_url: Optional[str] = None
 
 class TwilioCallCreate(TwilioCallBase):
     pass
